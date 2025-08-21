@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Big Fun JS – Playground</title>
+<style>
+  :root{
+    --bg:#0b0f14;
+    --card:#151b22;
+    --ink:#e7eef7;
+    --muted:#8ea0b5;
+    --accent:#62d0ff;
+    --accent2:#a3ff62;
+    --warn:#ff7a62;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:radial-gradient(1200px 800px at 20% -10%,#131a22 0%,#0b0f14 40%,#061018 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif}
+  header{
+    position:sticky;top:0;z-index:10;
+    backdrop-filter: blur(6px);
+    background:linear-gradient(180deg,rgba(11,15,20,.9),rgba(11,15,20,.65));
+    border-bottom:1px solid rgba(255,255,255,.05);
+    padding:14px 16px;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  }
+  header h1{font-size:20px;margin:0;letter-spacing:.5px;white-space:nowrap}
+  header .subtitle{color:var(--muted);font-size:12px}
+  header .actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  button, .chip{
+    background:var(--card); border:1px solid rgba(255,255,255,.07); color:var(--ink);
+    padding:10px 12px; border-radius:10px; cursor:pointer; transition:.2s; font-weight:600;
+  }
+  button:hover, .chip:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
+  .grid{
+    display:grid; gap:16px; padding:18px; grid-template-columns: repeat(auto-fill, minmax(240px,1fr));
+  }
+  .tile{
+    background:linear-gradient(180deg,#121922,#0f151d);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:14px; padding:16px;
+    display:flex; flex-direction:column; gap:10px; min-height:160px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 30px rgba(0,0,0,.22);
+  }
+  .tile h3{margin:0 0 6px 0}
+  .tile p{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
+  .tile .go{margin-top:auto;align-self:flex-start}
+  .badge{font-size:11px;padding:4px 8px;border-radius:999px;background:rgba(98,208,255,.15);border:1px solid rgba(98,208,255,.35);color:var(--accent)}
+  .content{padding:16px;display:none}
+  .content.active{display:block}
+  canvas{background:#0d131a;border:1px solid rgba(255,255,255,.06);border-radius:12px;width:100%;max-width:900px;height:500px;display:block;margin:auto}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .panel{
+    background:linear-gradient(180deg,#0e141b,#0b1117);
+    border:1px solid rgba(255,255,255,.07);
+    padding:12px;border-radius:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center
+  }
+  input[type="range"]{accent-color:var(--accent)}
+  .kbd{padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#101820;color:#cfe6ff;font-weight:700}
+  .footer{opacity:.75;text-align:center;padding:40px 16px;color:var(--muted)}
+  .hidden{display:none !important}
+  .terminal{
+    width:min(900px,100%);height:420px;background:#050a0f;color:#b7ffb3;
+    border:1px solid rgba(255,255,255,.08);border-radius:12px;margin:auto;padding:12px;font-family:ui-monospace,Consolas,Menlo,monospace;font-size:14px;overflow:auto;
+    box-shadow: inset 0 0 40px rgba(0,255,150,.08);
+  }
+  .prompt{color:#62ffa1}
+  .inputline{outline:none;border:none;background:transparent;color:#e5ffe8;width:100%;font:inherit}
+  .pill{padding:6px 10px;border-radius:999px;background:#0e1822;border:1px solid rgba(255,255,255,.07);color:#bfe4ff}
+  .toast{
+    position:fixed;bottom:18px;right:18px;background:#08131b;border:1px solid rgba(255,255,255,.08);
+    color:#dff3ff;border-radius:10px;padding:10px 12px;box-shadow:0 12px 30px rgba(0,0,0,.35);display:none
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎛️ Big Fun JS</h1>
+  <div class="subtitle">A pocket arcade of tiny toys. Find the <span class="badge">Konami Code</span> for a secret.</div>
+  <div class="actions">
+    <button id="homeBtn">🏠 Home</button>
+    <button id="randomBtn">🎲 Random</button>
+    <span class="pill">Progress: <b id="xp">0</b> XP</span>
+  </div>
+</header>
+
+<section id="home" class="grid">
+  <div class="tile">
+    <h3>🎉 Emoji Rain</h3>
+    <p>Make a storm of emojis. Drag to create gusts, scroll for intensity.</p>
+    <button class="go" data-target="emoji">Open</button>
+  </div>
+  <div class="tile">
+    <h3>🖱️ Clicker Frenzy</h3>
+    <p>Click to score. Buy silly upgrades. Offline progress via localStorage.</p>
+    <button class="go" data-target="clicker">Open</button>
+  </div>
+  <div class="tile">
+    <h3>🎹 Keyboard Piano</h3>
+    <p>Play with your keys. Record & loop. (A–L keys)</p>
+    <button class="go" data-target="piano">Open</button>
+  </div>
+  <div class="tile">
+    <h3>✨ Particle Playground</h3>
+    <p>Particles follow your mouse and avoid obstacles. Toggle gravity.</p>
+    <button class="go" data-target="particles">Open</button>
+  </div>
+  <div class="tile">
+    <h3>🖍️ Kaleido Draw</h3>
+    <p>Draw with symmetry & bloom. Save your masterpiece.</p>
+    <button class="go" data-target="draw">Open</button>
+  </div>
+  <div class="tile">
+    <h3>🏐 Bouncy Physics</h3>
+    <p>Spawn balls, tweak bounciness, and watch chaos.</p>
+    <button class="go" data-target="bouncy">Open</button>
+  </div>
+  <div class="tile">
+    <h3>🧪 Secret Terminal</h3>
+    <p>Locked. Maybe some famous code can unlock it…</p>
+    <button class="go" data-target="terminal">Open</button>
+  </div>
+</section>
+
+<!-- Emoji Rain -->
+<section id="emoji" class="content">
+  <div class="row panel">
+    <label>Emoji <input id="emojiChar" value="🎈" maxlength="2"></label>
+    <label>Rate <input id="emojiRate" type="range" min="1" max="100" value="30"></label>
+    <button id="emojiClear">Clear</button>
+  </div>
+  <canvas id="emojiCanvas" width="900" height="500"></canvas>
+</section>
+
+<!-- Clicker -->
+<section id="clicker" class="content">
+  <div class="panel row">
+    <div>Score: <b id="score">0</b></div>
+    <div class="pill">CPS: <b id="cps">0</b></div>
+    <button id="bigBtn">CLICK!</button>
+    <button id="saveBtn">Save</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div class="grid" id="shop"></div>
+</section>
+
+<!-- Piano -->
+<section id="piano" class="content">
+  <div class="panel row">
+    <span>Keys: A S D F G H J K L ; '</span>
+    <button id="recBtn">● Record</button>
+    <button id="playBtn">▶ Play</button>
+    <button id="clrRec">Clear</button>
+    <label>Wave <select id="waveSel"><option>sine</option><option>square</option><option>sawtooth</option><option>triangle</option></select></label>
+  </div>
+  <div class="row" id="pianoKeys"></div>
+</section>
+
+<!-- Particle Playground -->
+<section id="particles" class="content">
+  <div class="panel row">
+    <label>Count <input id="pCount" type="range" min="50" max="1000" value="300"></label>
+    <label>Gravity <input id="grav" type="checkbox"></label>
+    <button id="addBlock">Add Block</button>
+    <button id="clearBlocks">Clear Blocks</button>
+  </div>
+  <canvas id="particleCanvas" width="900" height="500"></canvas>
+</section>
+
+<!-- Kaleido Draw -->
+<section id="draw" class="content">
+  <div class="panel row">
+    <label>Symmetry <input id="sym" type="range" min="1" max="16" value="8"></label>
+    <label>Size <input id="dSize" type="range" min="1" max="40" value="8"></label>
+    <label>Bloom <input id="bloom" type="range" min="0" max="20" value="6"></label>
+    <button id="clearDraw">Clear</button>
+    <button id="savePNG">Save PNG</button>
+  </div>
+  <canvas id="drawCanvas" width="900" height="500"></canvas>
+</section>
+
+<!-- Bouncy Physics -->
+<section id="bouncy" class="content">
+  <div class="panel row">
+    <label>Balls <input id="ballCount" type="range" min="0" max="200" value="20"></label>
+    <label>Bounce <input id="restitution" type="range" min="0" max="1" step="0.05" value="0.8"></label>
+    <button id="spawn">Spawn</button>
+    <button id="shake">Shake</button>
+  </div>
+  <canvas id="bouncyCanvas" width="900" height="500"></canvas>
+</section>
+
+<!-- Secret Terminal (locked until Konami) -->
+<section id="terminal" class="content">
+  <div class="terminal" id="termOut"></div>
+  <div class="panel row" style="margin-top:10px">
+    <span class="kbd">Type help</span>
+    <input class="inputline" id="termIn" placeholder="> enter command…" autocomplete="off">
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<footer class="footer">Made with vanilla JS. Tip: try the Konami Code (↑ ↑ ↓ ↓ ← → ← → B A).</footer>
+
+<script>
+// ---------- Router / Layout ----------
+const sections = [...document.querySelectorAll('.content')];
+const home = document.querySelector('#home');
+const xpEl = document.querySelector('#xp');
+let XP = +(localStorage.getItem('fun_xp')||0); xpEl.textContent = XP;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2000); }
+function show(id){ home.style.display = id==='home'?'grid':'none'; sections.forEach(s=>s.classList.remove('active')); if(id!=='home'){ document.getElementById(id).classList.add('active'); } location.hash = '#'+id; }
+document.getElementById('homeBtn').onclick=()=>show('home');
+document.getElementById('randomBtn').onclick=()=>{ const ids=['emoji','clicker','piano','particles','draw','bouncy','terminal']; show(ids[Math.floor(Math.random()*ids.length)]) }
+document.querySelectorAll('.go').forEach(b=>b.onclick=()=>show(b.dataset.target));
+if(location.hash && document.getElementById(location.hash.slice(1))) show(location.hash.slice(1));
+
+function award(n,why){ XP+=n; localStorage.setItem('fun_xp',XP); xpEl.textContent=XP; toast('+'+n+' XP – '+why); }
+
+// ---------- Konami Code ----------
+(function konami(){
+  const target=['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+  let buf=[]; window.addEventListener('keydown',e=>{
+    buf.push(e.key.toLowerCase()); buf=buf.slice(-10);
+    if(buf.join(',')===target.join(',').toLowerCase()){ confetti(); award(50,'Konami discovered'); localStorage.setItem('terminal_unlocked','1'); toast('Secret Terminal unlocked!'); }
+  });
+  function confetti(){
+    const c=document.createElement('canvas'); c.width=innerWidth; c.height=innerHeight; c.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:9999'; document.body.appendChild(c);
+    const ctx=c.getContext('2d'); const pieces=Array.from({length:200},(_,i)=>({x:Math.random()*c.width,y:-20*Math.random(),vx:(Math.random()-.5)*4,vy:Math.random()*2+2,rz:Math.random()*6,w:6+Math.random()*8,h:12+Math.random()*16}));
+    let t=0; (function loop(){ ctx.clearRect(0,0,c.width,c.height); pieces.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.rz+=.1; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rz); ctx.fillStyle = `hsl(${(t*2+p.x)%360} 90% 60%)`; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore(); }); t++; if(t<300) requestAnimationFrame(loop); else c.remove(); })();
+  }
+  if(localStorage.getItem('terminal_unlocked')==='1'){ /* already unlocked */ }
+})();
+
+// ---------- Emoji Rain ----------
+(function(){
+  const canvas = document.getElementById('emojiCanvas'), ctx = canvas.getContext('2d');
+  const char = document.getElementById('emojiChar'); const rate = document.getElementById('emojiRate'); const clearBtn=document.getElementById('emojiClear');
+  let drops=[]; let wind={x:0,y:0}; let last=0;
+  canvas.addEventListener('pointermove',e=>{ const rect=canvas.getBoundingClientRect(); wind.x = (e.clientX-rect.width/2)/200; wind.y = (e.clientY-rect.height/2)/400; });
+  canvas.addEventListener('wheel',e=>{ e.preventDefault(); rate.value = Math.max(1, Math.min(100, +rate.value + Math.sign(e.deltaY)*-5)); }, {passive:false});
+  clearBtn.onclick=()=>{ drops=[]; award(5,'Sky cleared'); };
+  function spawn(n){ for(let i=0;i<n;i++){ drops.push({x:Math.random()*canvas.width, y:-30, vx:(Math.random()-.5)*1.5, vy:1+Math.random()*1.5, size:14+Math.random()*26, r:Math.random()*6}); } }
+  function draw(){ ctx.clearRect(0,0,canvas.width,canvas.height); drops.forEach(d=>{ d.vx+=wind.x*0.02; d.vy+=0.02+wind.y*0.01; d.x+=d.vx; d.y+=d.vy; d.r+=0.02; ctx.save(); ctx.translate(d.x,d.y); ctx.rotate(d.r); ctx.font = d.size+'px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji"'; ctx.fillText(char.value||'🎈',0,0); ctx.restore(); }); drops = drops.filter(d=>d.y<canvas.height+50); requestAnimationFrame(draw); }
+  function loop(ts){ if(ts-last>1000/ (+rate.value) ){ spawn(4); last = ts; } requestAnimationFrame(loop); }
+  draw(); loop(0);
+})();
+
+// ---------- Clicker Frenzy ----------
+(function(){
+  let S = JSON.parse(localStorage.getItem('fun_clicker')||'{"score":0,"cps":0,"items":{}}');
+  const scoreEl=document.getElementById('score'), cpsEl=document.getElementById('cps'), bigBtn=document.getElementById('bigBtn'), saveBtn=document.getElementById('saveBtn'), resetBtn=document.getElementById('resetBtn'), shop=document.getElementById('shop');
+  const ITEMS=[
+    {id:'cursor', name:'Auto-Click Cursor', base:15, cps:0.1, desc:'A friendly ghost finger.'},
+    {id:'grandma', name:'Grandma', base:100, cps:1, desc:'Bakes points with love.'},
+    {id:'factory', name:'Mini Factory', base:1100, cps:8, desc:'Industrialized fun.'},
+    {id:'lab', name:'Quantum Lab', base:12000, cps:47, desc:'Points from other timelines.'},
+    {id:'portal', name:'Portal', base:130000, cps:260, desc:'Vacuum points from multiverse.'}
+  ];
+  function costOf(base, owned){ return Math.floor(base * Math.pow(1.15, owned)); }
+  function refresh(){
+    scoreEl.textContent = Math.floor(S.score);
+    cpsEl.textContent = S.cps.toFixed(1);
+    shop.innerHTML='';
+    ITEMS.forEach(it=>{
+      const owned = S.items[it.id]||0;
+      const cost = costOf(it.base, owned);
+      const card=document.createElement('div'); card.className='tile'; card.innerHTML=`<h3>${it.name}</h3><p>${it.desc}</p><div class="row"><span class="pill">Owned: ${owned}</span><span class="pill">+${it.cps}/s</span><button data-id="${it.id}" class="buy">Buy (${cost})</button></div>`;
+      shop.appendChild(card);
+    });
+    document.querySelectorAll('.buy').forEach(b=>b.onclick=()=>{
+      const it = ITEMS.find(i=>i.id===b.dataset.id); const owned = S.items[it.id]||0; const cost = costOf(it.base, owned);
+      if(S.score>=cost){ S.score-=cost; S.items[it.id]=(owned+1); S.cps = totalCPS(); award(2,'Shop purchase'); refresh(); }
+      else toast('Not enough points.');
+    });
+    localStorage.setItem('fun_clicker', JSON.stringify(S));
+  }
+  function totalCPS(){ return ITEMS.reduce((sum,it)=> sum + (S.items[it.id]||0)*it.cps, 0); }
+  setInterval(()=>{ S.score += S.cps/10; if(Math.random()<0.04){ // golden blip
+      S.score += 5 + Math.random()*15; award(1,'Lucky tick');
+    } refresh(); }, 100);
+  bigBtn.onclick=()=>{ S.score++; if(Math.random()<0.1){ award(1,'Click streak!'); } refresh(); };
+  saveBtn.onclick=()=>{ localStorage.setItem('fun_clicker', JSON.stringify(S)); toast('Saved!'); award(1,'Manual save'); };
+  resetBtn.onclick=()=>{ if(confirm('Reset progress?')){ S={score:0,cps:0,items:{}}; refresh(); } };
+  // offline progress
+  (function offline(){ const last=+(localStorage.getItem('fun_clicker_last')||Date.now()); const now=Date.now(); const delta=(now-last)/1000; const gain = S.cps*delta; if(gain>0){ S.score += gain; award(Math.min(10, Math.floor(gain/100)),'Welcome back bonus'); } localStorage.setItem('fun_clicker_last', now); setInterval(()=>localStorage.setItem('fun_clicker_last', Date.now()),5000); })();
+  refresh();
+})();
+
+// ---------- Keyboard Piano ----------
+(function(){
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  const keys = "ASDFGHJKL;\'".split('');
+  const base = 220;
+  const ratios = [1, 9/8, 5/4, 4/3, 3/2, 5/3, 15/8, 2, 9/4, 5/2, 8/3];
+  const waveSel=document.getElementById('waveSel');
+  const pianoWrap=document.getElementById('pianoKeys');
+  let recording=[], isRec=false;
+  function makeKey(k,i){
+    const b=document.createElement('button');
+    b.className='chip'; b.textContent=k; b.onpointerdown=()=>play(i); pianoWrap.appendChild(b);
+  }
+  keys.forEach(makeKey);
+  function play(i){
+    const o=ctx.createOscillator(); const g=ctx.createGain();
+    o.type=waveSel.value; o.frequency.setValueAtTime(base*ratios[i], ctx.currentTime);
+    g.gain.setValueAtTime(.0001,ctx.currentTime); g.gain.exponentialRampToValueAtTime(.3, ctx.currentTime+.01);
+    g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+.5);
+    o.connect(g).connect(ctx.destination); o.start(); o.stop(ctx.currentTime+.6);
+    if(isRec) recording.push({i, t: ctx.currentTime});
+  }
+  window.addEventListener('keydown',e=>{ const idx=keys.indexOf(e.key.toUpperCase()); if(idx>-1) play(idx); });
+  document.getElementById('recBtn').onclick=()=>{ recording=[]; isRec=true; toast('Recording…'); award(2,'Music maker'); };
+  document.getElementById('playBtn').onclick=()=>{
+    if(recording.length===0) return toast('No recording.');
+    const t0 = recording[0].t;
+    recording.forEach(note=> setTimeout(()=>play(note.i), (note.t - t0)*1000) );
+  };
+  document.getElementById('clrRec').onclick=()=>{ recording=[]; toast('Cleared.'); };
+})();
+
+// ---------- Particle Playground ----------
+(function(){
+  const canvas=document.getElementById('particleCanvas'), ctx=canvas.getContext('2d');
+  let particles=[], blocks=[], mouse={x:0,y:0,down:false}; let gravity=false; 
+  function spawn(n){ for(let i=0;i<n;i++){ particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-.5)*2,vy:(Math.random()-.5)*2}); } }
+  spawn(300);
+  canvas.addEventListener('pointermove',e=>{ const r=canvas.getBoundingClientRect(); mouse.x=e.clientX-r.left; mouse.y=e.clientY-r.top; });
+  canvas.addEventListener('pointerdown',()=>mouse.down=true); canvas.addEventListener('pointerup',()=>mouse.down=false);
+  document.getElementById('pCount').addEventListener('input',e=>{ const t=+e.target.value; if(t>particles.length) spawn(t-particles.length); else particles=particles.slice(0,t); });
+  document.getElementById('grav').addEventListener('change',e=>gravity=e.target.checked);
+  document.getElementById('addBlock').onclick=()=>{ blocks.push({x:Math.random()*700+50,y:Math.random()*300+50,w:60+Math.random()*120,h:40+Math.random()*100}); award(1,'New obstacle'); };
+  document.getElementById('clearBlocks').onclick=()=>{ blocks=[]; };
+  function step(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // draw blocks
+    ctx.strokeStyle='rgba(255,255,255,.3)'; blocks.forEach(b=>{ ctx.strokeRect(b.x,b.y,b.w,b.h); });
+    // update particles
+    particles.forEach(p=>{
+      const dx = mouse.x - p.x, dy = mouse.y - p.y, d = Math.hypot(dx,dy)||1;
+      const pull = mouse.down ? 1 : -1;
+      p.vx += (dx/d)*0.05*pull; p.vy += (dy/d)*0.05*pull;
+      if(gravity) p.vy += 0.02;
+      p.x += p.vx; p.y += p.vy;
+      // collide walls
+      if(p.x<0||p.x>canvas.width) p.vx*=-1;
+      if(p.y<0||p.y>canvas.height) p.vy*=-1;
+      // collide blocks (simple AABB)
+      blocks.forEach(b=>{
+        if(p.x>b.x && p.x<b.x+b.w && p.y>b.y && p.y<b.y+b.h){
+          // push out
+          if(Math.abs(p.x-(b.x+b.w/2)) > Math.abs(p.y-(b.y+b.h/2))) p.vx*=-1; else p.vy*=-1;
+        }
+      });
+      // draw
+      ctx.beginPath(); ctx.arc(p.x,p.y,1.6,0,Math.PI*2); ctx.fillStyle='rgba(160,220,255,.9)'; ctx.fill();
+    });
+    requestAnimationFrame(step);
+  }
+  step();
+})();
+
+// ---------- Kaleido Draw ----------
+(function(){
+  const canvas=document.getElementById('drawCanvas'), ctx=canvas.getContext('2d');
+  let drawing=false, prev=null;
+  const sym=document.getElementById('sym'), size=document.getElementById('dSize'), bloom=document.getElementById('bloom');
+  ctx.fillStyle='#0b0f14'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  function drawLine(a,b){
+    const n=+sym.value, cx=canvas.width/2, cy=canvas.height/2;
+    for(let i=0;i<n;i++){
+      const ang = (i/n)*Math.PI*2;
+      const ra = rotate(a,cx,cy,ang); const rb = rotate(b,cx,cy,ang);
+      ctx.strokeStyle = `hsla(${(a.x+a.y+i*20)%360},100%,70%,.8)`;
+      ctx.lineWidth = +size.value;
+      ctx.shadowBlur = +bloom.value; ctx.shadowColor = '#fff';
+      ctx.beginPath(); ctx.moveTo(ra.x,ra.y); ctx.lineTo(rb.x,rb.y); ctx.stroke();
+    }
+  }
+  function rotate(p, cx, cy, ang){ const s=Math.sin(ang), c=Math.cos(ang); const x=p.x-cx, y=p.y-cy; return {x: x*c - y*s + cx, y: x*s + y*c + cy}; }
+  canvas.addEventListener('pointerdown',e=>{ drawing=true; const r=canvas.getBoundingClientRect(); prev={x:e.clientX-r.left, y:e.clientY-r.top}; });
+  canvas.addEventListener('pointerup',()=>{ drawing=false; prev=null; award(1,'Brush stroke'); });
+  canvas.addEventListener('pointermove',e=>{
+    if(!drawing) return; const r=canvas.getBoundingClientRect(); const p={x:e.clientX-r.left, y:e.clientY-r.top};
+    drawLine(prev,p); prev=p;
+  });
+  document.getElementById('clearDraw').onclick=()=>{ ctx.fillStyle='#0b0f14'; ctx.fillRect(0,0,canvas.width,canvas.height); };
+  document.getElementById('savePNG').onclick=()=>{ const a=document.createElement('a'); a.download='kaleido.png'; a.href=canvas.toDataURL('image/png'); a.click(); award(3,'Saved art'); };
+})();
+
+// ---------- Bouncy Physics ----------
+(function(){
+  const canvas=document.getElementById('bouncyCanvas'), ctx=canvas.getContext('2d');
+  let balls=[]; let R=0.8;
+  function spawn(n){ for(let i=0;i<n;i++){ balls.push({x:Math.random()*canvas.width,y:Math.random()*10+10,vx:(Math.random()-.5)*6,vy:Math.random()*2+1,r:8+Math.random()*18}); } }
+  document.getElementById('ballCount').addEventListener('input',e=>{ const t=+e.target.value; if(t>balls.length) spawn(t-balls.length); else balls=balls.slice(0,t); });
+  document.getElementById('restitution').addEventListener('input',e=>{ R=+e.target.value; });
+  document.getElementById('spawn').onclick=()=>spawn(10);
+  document.getElementById('shake').onclick=()=>{ balls.forEach(b=>b.vx += (Math.random()-.5)*10); award(1,'Earthquake!'); };
+  spawn(20);
+  function tick(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    balls.forEach(b=>{
+      b.vy += 0.2; // gravity
+      b.x += b.vx; b.y += b.vy;
+      // collide walls
+      if(b.x-b.r<0){ b.x=b.r; b.vx*=-R; }
+      if(b.x+b.r>canvas.width){ b.x=canvas.width-b.r; b.vx*=-R; }
+      if(b.y+b.r>canvas.height){ b.y=canvas.height-b.r; b.vy*=-R; if(Math.abs(b.vy)<0.7) b.vy=0; }
+      if(b.y-b.r<0){ b.y=b.r; b.vy*=-R; }
+      // draw
+      const hue=(b.x/ canvas.width)*360; ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=`hsl(${hue} 90% 60%)`; ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+// ---------- Secret Terminal ----------
+(function(){
+  const out=document.getElementById('termOut'), input=document.getElementById('termIn');
+  const unlocked = ()=> localStorage.getItem('terminal_unlocked')==='1';
+  const quotes=[
+    "Access not denied, just… obscured.",
+    "Every bug is a feature you haven't named yet.",
+    "JavaScript: 1; Sleep schedule: 0",
+    "Console.log the friends we made along the way.",
+    "Premature optimization is the root of 'meh'."
+  ];
+  function print(s){ out.innerHTML += s + "\\n"; out.scrollTop = out.scrollHeight; }
+  function prompt(){ print('<span class=\"prompt\">guest@fun</span>:~$ ' + input.value); input.value=''; }
+  function help(){
+    print("Commands: help, quote, clear, xp, echo <text>, ascii, about, unlock, save, load");
+  }
+  function ascii(){
+    print("  ____  _       ______           ");
+    print(" |  _ \\| |     |  ____|          ");
+    print(" | |_) | | ___ | |__ _   _ _ __  ");
+    print(" |  _ <| |/ _ \\|  __| | | | '_ \\ ");
+    print(" | |_) | | (_) | |  | |_| | | | |");
+    print(" |____/|_|\\___/|_|   \\__,_|_| |_|");
+  }
+  function about(){ print("Big Fun JS – a tiny arcade of toys. Find the Konami Code to unlock hidden things!"); }
+  function unlock(){ if(unlocked()){ print("Already unlocked. Welcome back, hacker."); } else { print("Try something classic… ↑ ↑ ↓ ↓ ← → ← → B A"); } }
+  function quote(){ print(quotes[Math.floor(Math.random()*quotes.length)]); award(1,'Wisdom downloaded'); }
+  function xp(){ print("XP: "+localStorage.getItem('fun_xp')); }
+  function clear(){ out.innerHTML=''; }
+  function save(){ localStorage.setItem('terminal_save', out.innerHTML); print('saved.'); }
+  function load(){ out.innerHTML = localStorage.getItem('terminal_save')||''; print('restored.'); }
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      const line = input.value.trim(); prompt();
+      const [cmd, ...rest] = line.split(' ');
+      const arg = rest.join(' ');
+      if(cmd==='help') help();
+      else if(cmd==='quote') quote();
+      else if(cmd==='clear') clear();
+      else if(cmd==='xp') xp();
+      else if(cmd==='ascii') ascii();
+      else if(cmd==='about') about();
+      else if(cmd==='unlock') unlock();
+      else if(cmd==='echo') print(arg);
+      else if(cmd==='save') save();
+      else if(cmd==='load') load();
+      else if(cmd==='') {}
+      else print('Unknown command: '+cmd);
+    }
+  });
+  // lock guard
+  const section=document.getElementById('terminal');
+  const guard = new MutationObserver(()=>{
+    if(section.classList.contains('active') && !unlocked()){
+      print('ACCESS LOCKED. Hint: a legendary cheat code…'); input.disabled=true; input.placeholder='locked'; 
+    }else if(section.classList.contains('active') && unlocked()){
+      input.disabled=false; input.placeholder='> enter command…';
+      if(out.innerHTML===''){ help(); award(10,'Terminal opened'); }
+    }
+  });
+  guard.observe(section,{attributes:true});
+})();
+
+</script>
+</body>
+</html>
